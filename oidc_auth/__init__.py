@@ -4,10 +4,13 @@ Knows OIDC + a `find_or_create_user(claims) -> user_id` callback; nothing about
 any app's schema. When OIDC env is unconfigured, `current_user` resolves to a
 fixed dev-owner so local dev + tests run with no IdP.
 """
+import logging
 import os
 from dataclasses import dataclass, field
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+
+logger = logging.getLogger("oidc_auth")
 
 
 @dataclass
@@ -101,6 +104,7 @@ class OIDCAuth:
             try:
                 return await self._oauth.idp.authorize_redirect(request, self.config.redirect_uri)
             except Exception:
+                logger.exception("OIDC /auth/login failed (identity provider unreachable?)")
                 raise HTTPException(status_code=503, detail="identity provider unavailable")
 
         @app.get("/auth/callback")
@@ -110,6 +114,7 @@ class OIDCAuth:
             try:
                 token = await self._oauth.idp.authorize_access_token(request)
             except Exception:
+                logger.exception("OIDC /auth/callback failed (token exchange / id_token validation)")
                 request.session.pop("user", None)
                 return RedirectResponse(url="/auth/login", status_code=302)
             claims = token.get("userinfo") or {}

@@ -1,6 +1,6 @@
 [project]
 name = "oidc-auth-fastapi"
-version = "0.1.0"
+version = "0.1.1"
 description = "Reusable BFF OIDC auth for FastAPI (Authlib + Starlette session cookie)."
 requires-python = ">=3.11"
 dependencies = [
